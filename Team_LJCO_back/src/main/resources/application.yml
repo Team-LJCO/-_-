@@ -1,0 +1,60 @@
+spring:
+  profiles:
+    active: local
+    group:
+      local: common, secret
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: common
+
+  application:
+    name: team-ljco-fridgemate
+
+  # 파일 업로드 설정 (재료 이미지, 레시피 이미지)
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 100MB
+      file-size-threshold: 2MB
+
+# 서버 설정
+server:
+  port: 8080
+  tomcat:
+    max-swallow-size: -1
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+# Swagger 설정 (API 문서)
+springdoc:
+  swagger-ui:
+    path: /doc
+    operations-sorter: alpha
+    tags-sorter: alpha
+  api-docs:
+    path: /api-docs
+
+# MyBatis 설정
+mybatis:
+  mapper-locations: classpath:mappers/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true   # user_id -> userId 자동 변환
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # SQL 로그
+  type-aliases-package: com.korit.team_ljco.entity
+
+# 로깅 설정
+logging:
+  level:
+    com.korit.team_ljco: DEBUG
+    org.springframework.security: DEBUG
+    org.mybatis: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
