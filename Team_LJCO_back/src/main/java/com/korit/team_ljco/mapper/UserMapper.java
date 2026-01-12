@@ -2,15 +2,19 @@ package com.korit.team_ljco.mapper;
 
 import com.korit.team_ljco.entity.User;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface UserMapper {
-    int insert(User user);
-    User findById(int userId);
-    User findByProvider(
-            @Param("provider") String provider,
-            @Param("providerId") String providerId
-    );
-}
 
+    User selectUserById(Long userId);
+
+    User selectUserByOauth2Id(String oauth2Id);
+
+    User selectUserByEmail(String email);
+
+    int insertUser(User user);
+
+    int updateUser(User user);
+
+    int deleteUser(Long userId);
+}
