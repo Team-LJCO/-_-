@@ -9,7 +9,6 @@
     <resultMap id="RecipeResultMap" type="com.korit.team_ljco.entity.Recipe">
         <id property="rcpId" column="rcp_id"/>
         <result property="rcpName" column="rcp_name"/>
-        <result property="rcpDesc" column="rcp_desc"/>
         <result property="rcpImgUrl" column="rcp_img_url"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
@@ -59,159 +58,11 @@
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
-    <!-- ID로 레시피 조회 (재료, 단계 포함) -->
-    <select id="selectRecipeById" parameterType="long" resultMap="RecipeResultMap">
-        SELECT
-        r.rcp_id, r.rcp_name, r.rcp_img_url,
-        r.created_at, r.updated_at,
-        ri.rcp_ing_id, ri.ing_id, ri.rcp_ing_amt, ri.rcp_ing_ord,
-        i.ing_name, i.ing_img_url,
-        s.step_id, s.step_no, s.step_desc, s.step_img_url
-        FROM rcp r
-        LEFT JOIN rcp_ing ri ON r.rcp_id = ri.rcp_id
-        LEFT JOIN ing i ON ri.ing_id = i.ing_id
-        LEFT JOIN rcp_steps s ON r.rcp_id = s.rcp_id
-        WHERE r.rcp_id = #{rcpId}
-        ORDER BY ri.rcp_ing_ord, s.step_no
-    </select>
-
-    <!-- 전체 레시피 조회 -->
-    <select id="selectAllRecipes" resultMap="RecipeResultMap">
-        SELECT
-        rcp_id, rcp_name, rcp_img_url,
-        created_at, updated_at
-        FROM rcp
-        ORDER BY created_at DESC
-    </select>
-
-    <!-- 레시피명 검색 -->
-    <select id="searchRecipesByName" parameterType="string" resultMap="RecipeResultMap">
-        SELECT
-        rcp_id, rcp_name, rcp_img_url,
-        created_at, updated_at
-        FROM rcp
-        WHERE rcp_name LIKE CONCAT('%', #{keyword}, '%')
-        ORDER BY rcp_name
-    </select>
-
-    <!-- 레시피 등록 -->
-    <insert id="insertRecipe" parameterType="com.korit.team_ljco.entity.Recipe"
-            useGeneratedKeys="true" keyProperty="rcpId">
-        INSERT INTO rcp (
-        rcp_name, rcp_img_url
-        ) VALUES (
-        #{rcpName}, #{rcpImgUrl}
-        )
-    </insert>
-
-    <!-- 레시피 수정 -->
-    <update id="updateRecipe" parameterType="com.korit.team_ljco.entity.Recipe">
-        UPDATE rcp
-        SET
-        rcp_name = #{rcpName},
-        rcp_img_url = #{rcpImgUrl},
-        updated_at = CURRENT_TIMESTAMP
-        WHERE rcp_id = #{rcpId}
-    </update>
-
-    <!-- 레시피 삭제 -->
-    <delete id="deleteRecipe" parameterType="long">
-        DELETE FROM rcp
-        WHERE rcp_id = #{rcpId}
-    </delete>
-
-    <!-- 레시피 재료 조회 -->
-    <select id="selectRecipeIngredients" parameterType="long" resultMap="RecipeIngredientResultMap">
-        SELECT
-        ri.rcp_ing_id, ri.rcp_id, ri.ing_id, ri.rcp_ing_amt, ri.rcp_ing_ord,
-        ri.created_at,
-        i.ing_name, i.ing_img_url
-        FROM rcp_ing ri
-        INNER JOIN ing i ON ri.ing_id = i.ing_id
-        WHERE ri.rcp_id = #{rcpId}
-        ORDER BY ri.rcp_ing_ord
-    </select>
-
-    <!-- 레시피 재료 등록 -->
-    <insert id="insertRecipeIngredient" parameterType="com.korit.team_ljco.entity.RecipeIngredient"
-            useGeneratedKeys="true" keyProperty="rcpIngId">
-        INSERT INTO rcp_ing (
-        rcp_id, ing_id, rcp_ing_amt, rcp_ing_ord
-        ) VALUES (
-        #{rcpId}, #{ingId}, #{rcpIngAmt}, #{rcpIngOrd}
-        )
-    </insert>
-
-    <!-- 레시피 재료 삭제 -->
-    <delete id="deleteRecipeIngredients" parameterType="long">
-        DELETE FROM rcp_ing
-        WHERE rcp_id = #{rcpId}
-    </delete>
-
-    <!-- 레시피 단계 조회 -->
-    <select id="selectRecipeSteps" parameterType="long" resultMap="RecipeStepResultMap">
-        SELECT
-        step_id, rcp_id, step_no, step_desc, step_img_url, created_at
-        FROM rcp_steps
-        WHERE rcp_id = #{rcpId}
-        ORDER BY step_no
-    </select>
-
-    <!-- 레시피 단계 등록 -->
-    <insert id="insertRecipeStep" parameterType="com.korit.team_ljco.entity.RecipeStep"
-            useGeneratedKeys="true" keyProperty="stepId">
-        INSERT INTO rcp_steps (
-        rcp_id, step_no, step_desc, step_img_url
-        ) VALUES (
-        #{rcpId}, #{stepNo}, #{stepDesc}, #{stepImgUrl}
-        )
-    </insert>
-
-    <!-- 레시피 단계 삭제 -->
-    <delete id="deleteRecipeSteps" parameterType="long">
-        DELETE FROM rcp_steps
-        WHERE rcp_id = #{rcpId}
-    </delete>
-
-    <!-- 추천 레시피 (사용자 재료 기반) -->
-    <select id="selectRecommendedRecipes" parameterType="long" resultType="map">
-        SELECT
-        r.rcp_id AS recipeId,
-        r.rcp_name AS recipeName,
-        r.rcp_img_url AS recipeImgUrl,
-        COUNT(DISTINCT ri.ing_id) AS totalIngredients,
-        COUNT(DISTINCT ui.ing_id) AS matchedIngredients,
-        ROUND(COUNT(DISTINCT ui.ing_id) * 100.0 / COUNT(DISTINCT ri.ing_id), 2) AS matchPercentage
-        FROM rcp r
-        INNER JOIN rcp_ing ri ON r.rcp_id = ri.rcp_id
-        LEFT JOIN user_ing ui ON ri.ing_id = ui.ing_id AND ui.user_id = #{userId}
-        GROUP BY r.rcp_id
-        HAVING matchedIngredients > 0
-        ORDER BY matchPercentage DESC, matchedIngredients DESC
-        LIMIT 20
-    </select>
-
-    <!-- 인기 레시피 조회 (조회수 기준) -->
-    <select id="selectTopRecipesByViews" parameterType="int" resultMap="RecipeResultMap">
-        SELECT
-        rcp_id, rcp_name, rcp_img_url,
-        created_at, updated_at
-        FROM rcp
-        ORDER BY created_at DESC
-        LIMIT #{limit}
-    </select>
-
-    <!-- 조회수 증가 - 향후 view_count 컬럼 추가 시 활성화 -->
-    <update id="incrementViewCount" parameterType="long">
-        -- UPDATE rcp
-        -- SET view_count = view_count + 1
-        -- WHERE rcp_id = #{rcpId}
-        SELECT 1
-    </update>
-
-    <!-- 전체 레시피 수 -->
-    <select id="countAllRecipes" resultType="int">
-        SELECT COUNT(*) FROM rcp
+    <select id="getRecipes" resultMap="RecipeResultMap">
+        select *
+        from rcp
+        order by rcp_id desc
+        limit 10
     </select>
 
 </mapper>
