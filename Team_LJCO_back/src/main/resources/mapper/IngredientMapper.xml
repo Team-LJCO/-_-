@@ -1,9 +1,138 @@
-<!--<?xml version="1.0" encoding="UTF-8" ?>-->
-<!--<!DOCTYPE mapper-->
-<!--    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"-->
-<!--    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">-->
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<!--    <mapper namespace="com.korit.team_ljco.mapper.IngredientMapper">-->
-<!--        <resultMap id="" type=""-->
+<mapper namespace="com.korit.team_ljco.mapper.IngredientMapper">
 
-<!--    </mapper>-->
+    <!-- Ingredient ResultMap -->
+    <resultMap id="IngredientResultMap" type="com.korit.team_ljco.entity.Ingredient">
+        <id property="ingId" column="ing_id"/>
+        <result property="ingName" column="ing_name"/>
+        <result property="ingCatId" column="ing_cat_id"/>
+        <result property="ingImgUrl" column="ing_img_url"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <association property="category" javaType="com.korit.team_ljco.entity.IngredientCategory">
+            <id property="ingCatId" column="ing_cat_id"/>
+            <result property="ingCatName" column="ing_cat_name"/>
+            <result property="ingCatImgUrl" column="ing_cat_img_url"/>
+        </association>
+    </resultMap>
+
+    <!-- IngredientCategory ResultMap -->
+    <resultMap id="CategoryResultMap" type="com.korit.team_ljco.entity.IngredientCategory">
+        <id property="ingCatId" column="ing_cat_id"/>
+        <result property="ingCatName" column="ing_cat_name"/>
+        <result property="ingCatImgUrl" column="ing_cat_img_url"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- ID로 재료 조회 -->
+    <select id="selectIngredientById" parameterType="int" resultMap="IngredientResultMap">
+        SELECT 
+            i.ing_id, i.ing_name, i.ing_cat_id, i.ing_img_url, 
+            i.created_at, i.updated_at,
+            c.ing_cat_name, c.ing_cat_img_url
+        FROM ing i
+        LEFT JOIN ingredient_categories c ON i.ing_cat_id = c.ing_cat_id
+        WHERE i.ing_id = #{ingId}
+    </select>
+
+    <!-- 전체 재료 조회 -->
+    <select id="selectAllIngredients" resultMap="IngredientResultMap">
+        SELECT 
+            i.ing_id, i.ing_name, i.ing_cat_id, i.ing_img_url,
+            i.created_at, i.updated_at,
+            c.ing_cat_name, c.ing_cat_img_url
+        FROM ingredients i
+        LEFT JOIN ingredient_categories c ON i.ing_cat_id = c.ing_cat_id
+        ORDER BY i.ing_name
+    </select>
+
+    <!-- 카테고리별 재료 조회 -->
+    <select id="selectIngredientsByCategory" parameterType="int" resultMap="IngredientResultMap">
+        SELECT 
+            i.ing_id, i.ing_name, i.ing_cat_id, i.ing_img_url,
+            i.created_at, i.updated_at,
+            c.ing_cat_name, c.ing_cat_img_url
+        FROM ingredients i
+        LEFT JOIN ingredient_categories c ON i.ing_cat_id = c.ing_cat_id
+        WHERE i.ing_cat_id = #{ingCatId}
+        ORDER BY i.ing_name
+    </select>
+
+    <!-- 재료명 검색 -->
+    <select id="searchIngredientsByName" parameterType="string" resultMap="IngredientResultMap">
+        SELECT 
+            i.ing_id, i.ing_name, i.ing_cat_id, i.ing_img_url,
+            i.created_at, i.updated_at,
+            c.ing_cat_name, c.ing_cat_img_url
+        FROM ingredients i
+        LEFT JOIN ingredient_categories c ON i.ing_cat_id = c.ing_cat_id
+        WHERE i.ing_name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY i.ing_name
+    </select>
+
+    <!-- 재료 등록 -->
+    <insert id="insertIngredient" parameterType="com.korit.team_ljco.entity.Ingredient"
+            useGeneratedKeys="true" keyProperty="ingId">
+        INSERT INTO ingredients (
+            ing_name, ing_cat_id, ing_img_url
+        ) VALUES (
+            #{ingName}, #{ingCatId}, #{ingImgUrl}
+        )
+    </insert>
+
+    <!-- 재료 수정 -->
+    <update id="updateIngredient" parameterType="com.korit.team_ljco.entity.Ingredient">
+        UPDATE ingredients
+        SET
+            ing_name = #{ingName},
+            ing_cat_id = #{ingCatId},
+            ing_img_url = #{ingImgUrl},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE ing_id = #{ingId}
+    </update>
+
+    <!-- 재료 삭제 -->
+    <delete id="deleteIngredient" parameterType="int">
+        DELETE FROM ingredients
+        WHERE ing_id = #{ingId}
+    </delete>
+
+    <!-- 카테고리 ID로 조회 -->
+    <select id="selectCategoryById" parameterType="int" resultMap="CategoryResultMap">
+        SELECT
+            ing_cat_id, ing_cat_name, ing_cat_img_url,
+            created_at, updated_at
+        FROM ingredient_categories
+        WHERE ing_cat_id = #{ingCatId}
+    </select>
+
+    <!-- 전체 카테고리 조회 -->
+    <select id="selectAllCategories" resultMap="CategoryResultMap">
+        SELECT
+            ing_cat_id, ing_cat_name, ing_cat_img_url,
+            created_at, updated_at
+        FROM ingredient_categories
+        ORDER BY ing_cat_name
+    </select>
+
+    <!-- 인기 재료 조회 (사용 빈도 기준) -->
+    <select id="selectTopIngredientsByUsage" parameterType="int" resultMap="IngredientResultMap">
+        SELECT 
+            i.ing_id, i.ing_name, i.ing_cat_id, i.ing_img_url,
+            i.created_at, i.updated_at,
+            c.ing_cat_name, c.ing_cat_img_url,
+            COUNT(ri.rcp_ing_id) as usage_count
+        FROM ingredients i
+        LEFT JOIN ingredient_categories c ON i.ing_cat_id = c.ing_cat_id
+        LEFT JOIN recipe_ingredients ri ON i.ing_id = ri.ing_id
+        GROUP BY i.ing_id
+        ORDER BY usage_count DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

@@ -1,4 +1,4 @@
-package com.korit.team_ljco.service.impl;
+package com.korit.team_ljco.service;
 
 import com.korit.team_ljco.entity.User;
 import com.korit.team_ljco.mapper.UserMapper;

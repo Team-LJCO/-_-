@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.korit.team_ljco.mapper.UserIngredientMapper">
+
+    <!-- UserIngredient ResultMap -->
+    <resultMap id="UserIngredientResultMap" type="com.korit.team_ljco.entity.UserIngredient">
+        <id property="userIngId" column="user_ing_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="ingId" column="ing_id"/>
+        <result property="userIngAmt" column="user_ing_amt"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <association property="ingredient" javaType="com.korit.team_ljco.entity.Ingredient">
+            <id property="ingId" column="ing_id"/>
+            <result property="ingName" column="ing_name"/>
+            <result property="ingCatId" column="ing_cat_id"/>
+            <result property="ingImgUrl" column="ing_img_url"/>
+        </association>
+    </resultMap>
+
+    <!-- 사용자 재료 전체 조회 -->
+    <select id="selectUserIngredients" parameterType="long" resultMap="UserIngredientResultMap">
+        SELECT 
+            ui.user_ing_id, ui.user_id, ui.ing_id, ui.user_ing_amt,
+            ui.created_at, ui.updated_at,
+            i.ing_name, i.ing_cat_id, i.ing_img_url
+        FROM user_ingredients ui
+        INNER JOIN ingredients i ON ui.ing_id = i.ing_id
+        WHERE ui.user_id = #{userId}
+        ORDER BY ui.created_at DESC
+    </select>
+
+    <!-- ID로 사용자 재료 조회 -->
+    <select id="selectUserIngredientById" parameterType="long" resultMap="UserIngredientResultMap">
+        SELECT 
+            ui.user_ing_id, ui.user_id, ui.ing_id, ui.user_ing_amt,
+            ui.created_at, ui.updated_at,
+            i.ing_name, i.ing_cat_id, i.ing_img_url
+        FROM user_ingredients ui
+        INNER JOIN ingredients i ON ui.ing_id = i.ing_id
+        WHERE ui.user_ing_id = #{userIngId}
+    </select>
+
+    <!-- 사용자와 재료로 조회 -->
+    <select id="selectUserIngredientByUserAndIng" resultMap="UserIngredientResultMap">
+        SELECT 
+            ui.user_ing_id, ui.user_id, ui.ing_id, ui.user_ing_amt,
+            ui.created_at, ui.updated_at,
+            i.ing_name, i.ing_cat_id, i.ing_img_url
+        FROM user_ingredients ui
+        INNER JOIN ingredients i ON ui.ing_id = i.ing_id
+        WHERE ui.user_id = #{userId} AND ui.ing_id = #{ingId}
+    </select>
+
+    <!-- 사용자 재료 등록 -->
+    <insert id="insertUserIngredient" parameterType="com.korit.team_ljco.entity.UserIngredient"
+            useGeneratedKeys="true" keyProperty="userIngId">
+        INSERT INTO user_ingredients (
+            user_id, ing_id, user_ing_amt
+        ) VALUES (
+            #{userId}, #{ingId}, #{userIngAmt}
+        )
+    </insert>
+
+    <!-- 사용자 재료 수정 -->
+    <update id="updateUserIngredient" parameterType="com.korit.team_ljco.entity.UserIngredient">
+        UPDATE user_ingredients
+        SET
+            user_ing_amt = #{userIngAmt},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE user_ing_id = #{userIngId}
+    </update>
+
+    <!-- 사용자 재료 삭제 -->
+    <delete id="deleteUserIngredient" parameterType="long">
+        DELETE FROM user_ingredients
+        WHERE user_ing_id = #{userIngId}
+    </delete>
+
+    <!-- 사용자의 모든 재료 삭제 -->
+    <delete id="deleteUserIngredientsByUser" parameterType="long">
+        DELETE FROM user_ingredients
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 사용자 재료 수 -->
+    <select id="countUserIngredients" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM user_ingredients
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>
