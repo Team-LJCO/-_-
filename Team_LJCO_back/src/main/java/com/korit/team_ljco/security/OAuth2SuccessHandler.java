@@ -19,7 +19,6 @@ import java.io.IOException;
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserService userService;
 
     @Value("${app.oauth2.redirect-uri:http://localhost:3000/auth/oauth2/callback}")
     private String redirectUri;
@@ -27,19 +26,12 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
 
-        // OAuth2 인증 정보에서 사용자 ID 추출 (네이버, 구글, 카카오)
-        String oauth2Id = authentication.getName();
-
-        // DB에서 사용자 조회
-        User foundUser = userService.findUserByOauth2Id(oauth2Id);
-
-        // 신규 사용자면 회원가입 처리
-        if (foundUser == null) {
-            foundUser = userService.createOAuth2User(authentication);
-        }
+        // PrincipalUser에서 User 객체 추출
+        PrincipalUser principalUser = (PrincipalUser) authentication.getPrincipal();
+        User user = principalUser.getUser();
 
         // JWT 토큰 생성
-        String accessToken = jwtTokenProvider.createAccessToken(foundUser);
+        String accessToken = jwtTokenProvider.createAccessToken(user);
 
         // 프론트엔드로 리다이렉트 (토큰 전달)
         response.sendRedirect(redirectUri + "?accessToken=" + accessToken);

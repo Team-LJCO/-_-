@@ -42,4 +42,32 @@ public class PrincipalUser extends DefaultOAuth2User {
         PrincipalUser principalUser = getAuthenticatedPrincipalUser();
         return principalUser != null ? principalUser.getUser() : null;
     }
+
+    /**
+     * 사용자 ID 가져오기 (편의 메서드)
+     */
+    public Long getUserId() {
+        return this.user != null ? this.user.getUserId() : null;
+    }
+
+    /**
+     * 사용자 이름 가져오기 (편의 메서드)
+     */
+    public String getUserName() {
+        return this.user != null ? this.user.getUserName() : null;
+    }
+
+    /**
+     * 사용자 이메일 가져오기 (편의 메서드)
+     */
+    public String getUserEmail() {
+        return this.user != null ? this.user.getUserEmail() : null;
+    }
+
+    /**
+     * 사용자 역할 가져오기 (편의 메서드)
+     */
+    public String getUserRole() {
+        return this.user != null ? this.user.getUserRole() : null;
+    }
 }

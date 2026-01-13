@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -26,9 +27,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserService userService;
 
+    // JWT 인증을 건너뛸 경로 목록
+    private static final List<String> EXCLUDED_PATHS = Arrays.asList(
+            "/doc",
+            "/swagger-ui",
+            "/v3/api-docs",
+            "/api-docs",
+            "/swagger-resources",
+            "/webjars",
+            "/api/auth",
+            "/oauth2",
+            "/login",
+            "/api/ingredients",
+            "/api/recipes"
+    );
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+
+        // 공개 경로는 JWT 검증 건너뛰기
+        String requestPath = request.getRequestURI();
+        if (isPublicPath(requestPath)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         // 요청 헤더에서 JWT 토큰 추출
         String token = getTokenFromRequest(request);
@@ -58,6 +81,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * 공개 경로인지 확인
+     */
+    private boolean isPublicPath(String requestPath) {
+        return EXCLUDED_PATHS.stream()
+                .anyMatch(requestPath::startsWith);
     }
 
     /**

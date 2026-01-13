@@ -16,7 +16,6 @@ public class Recipe {
 
     private Long rcpId;
     private String rcpName;
-    private String rcpDesc;
     private String rcpImgUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
