@@ -1,14 +1,31 @@
 package com.korit.team_ljco.mapper;
 
 
+import com.korit.team_ljco.dto.RecipeCountRow;
+import com.korit.team_ljco.dto.RecipeListResponse;
+import com.korit.team_ljco.entity.Ingredient;
 import com.korit.team_ljco.entity.Recipe;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
 @Mapper
 public interface RecipeMapper {
-    //레시피 전체 조회
-    List<Recipe> getRecipes();
+    //메인 레시피 목록 조회
+    //페이지 넘김을 고려한 pagesize 생성 => 서비스에서 계산함
+    List<RecipeListResponse> getRecipes(@Param("pageSize") int pageSize,
+                                        @Param("offset") int offset);
+    //일치율
+    //한 사람에 대한 레시피라서 userid는 하나 rcpids는 여러개라 리스트
+    List<RecipeCountRow> getMatchRate(@Param("userId") Long userId,
+                                      @Param("rcpIds") Long<List> rcpIds);
+
+    //며칠남았는지
+    int getDaysLeft();
+
+    //난이도
+    int getLevel();
 
 }
+

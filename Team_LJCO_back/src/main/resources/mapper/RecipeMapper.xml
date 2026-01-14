@@ -5,64 +5,53 @@
 
 <mapper namespace="com.korit.team_ljco.mapper.RecipeMapper">
 
-    <!-- Recipe ResultMap -->
-    <resultMap id="RecipeResultMap" type="com.korit.team_ljco.entity.Recipe">
+    <resultMap id="RecipeListWithIngredientsMap"
+               type="com.korit.team_ljco.dto.RecipeListResponse">
         <id property="rcpId" column="rcp_id"/>
         <result property="rcpName" column="rcp_name"/>
         <result property="rcpImgUrl" column="rcp_img_url"/>
-        <result property="createdAt" column="created_at"/>
-        <result property="updatedAt" column="updated_at"/>
+        <result property="rcpViewCount" column="rcp_view_count"/>
+        <result property="level" column="level"/>
+
         <collection property="ingredients" ofType="com.korit.team_ljco.entity.RecipeIngredient">
-            <id property="rcpIngId" column="rcp_ing_id"/>
-            <result property="rcpId" column="rcp_id"/>
             <result property="ingId" column="ing_id"/>
-            <result property="rcpIngAmt" column="rcp_ing_amt"/>
-            <result property="rcpIngOrd" column="rcp_ing_ord"/>
-            <association property="ingredient" javaType="com.korit.team_ljco.entity.Ingredient">
-                <id property="ingId" column="ing_id"/>
-                <result property="ingName" column="ing_name"/>
-                <result property="ingImgUrl" column="ing_img_url"/>
-            </association>
-        </collection>
-        <collection property="steps" ofType="com.korit.team_ljco.entity.RecipeStep">
-            <id property="stepId" column="step_id"/>
-            <result property="rcpId" column="rcp_id"/>
-            <result property="stepNo" column="step_no"/>
-            <result property="stepDesc" column="step_desc"/>
-            <result property="stepImgUrl" column="step_img_url"/>
-        </collection>
-    </resultMap>
-
-    <!-- RecipeIngredient ResultMap -->
-    <resultMap id="RecipeIngredientResultMap" type="com.korit.team_ljco.entity.RecipeIngredient">
-        <id property="rcpIngId" column="rcp_ing_id"/>
-        <result property="rcpId" column="rcp_id"/>
-        <result property="ingId" column="ing_id"/>
-        <result property="rcpIngAmt" column="rcp_ing_amt"/>
-        <result property="rcpIngOrd" column="rcp_ing_ord"/>
-        <result property="createdAt" column="created_at"/>
-        <association property="ingredient" javaType="com.korit.team_ljco.entity.Ingredient">
-            <id property="ingId" column="ing_id"/>
             <result property="ingName" column="ing_name"/>
-            <result property="ingImgUrl" column="ing_img_url"/>
-        </association>
+        </collection>
     </resultMap>
 
-    <!-- RecipeStep ResultMap -->
-    <resultMap id="RecipeStepResultMap" type="com.korit.team_ljco.entity.RecipeStep">
-        <id property="stepId" column="step_id"/>
-        <result property="rcpId" column="rcp_id"/>
-        <result property="stepNo" column="step_no"/>
-        <result property="stepDesc" column="step_desc"/>
-        <result property="stepImgUrl" column="step_img_url"/>
-        <result property="createdAt" column="created_at"/>
+    <resultMap id="MatchRateMap" type="com.korit.team_ljco.dto.RecipeCountRow">
+        <result property="ingName" column="ing_name"/>
     </resultMap>
 
-    <select id="getRecipes" resultMap="RecipeResultMap">
-        select *
-        from rcp
-        order by rcp_id desc
-        limit 10
+//유저아이디
+    //레시피재료개수컬럼추가
+    //유저레시피재료개수추가 - update set으로 설정해서 업데이트
+    <select id="getRecipes" resultMap="RecipeListWithIngredientsMap">
+        select
+            r.rcp_id,
+            r.rcp_name,
+            r.rcp_img_url,
+            r.rcp_view_count,
+            r.level,
+            i.ing_name,
+        from
+            rcp r
+        left join rcp_ing ri on r.rcp_id = ri.rcp_id
+        left join ingredients i on ri.ing_id = i.ing_id
+        order by
+            rcp_id desc
+        limit #{pageSize} offset #{offset}
+    </select>
+
+    <select id="getMatchRate" resultMap="MatchRateMap">
+        select
+
+        from
+            rcp_ing ri
+        join user_ingredients ui
+            on ui.ing_id = ri.ing_id
+            and ui.user_id = #{userId}
+        where ri.rcp_id in
     </select>
 
 </mapper>
