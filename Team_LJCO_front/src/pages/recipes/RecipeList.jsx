@@ -6,7 +6,7 @@ function RecipeList() {
 
     useEffect(() => {
         //백엔드에서 들고 오는 url !!
-        api.get("/api/recipes/all")
+        api.get("/recipes/all") 
             .then(res => setRecipes(res.data))
             .catch(console.error)
     },[]);
