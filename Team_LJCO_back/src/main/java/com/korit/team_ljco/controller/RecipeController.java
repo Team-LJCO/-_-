@@ -1,5 +1,6 @@
 package com.korit.team_ljco.controller;
 
+import com.korit.team_ljco.dto.RecipeCountRow;
 import com.korit.team_ljco.dto.RecipeListResponse;
 import com.korit.team_ljco.service.RecipeService;
 import lombok.RequiredArgsConstructor;
