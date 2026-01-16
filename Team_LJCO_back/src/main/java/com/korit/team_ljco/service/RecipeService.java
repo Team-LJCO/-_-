@@ -1,18 +1,20 @@
 package com.korit.team_ljco.service;
 
-import com.korit.team_ljco.dto.RecipeCount;
-import com.korit.team_ljco.dto.RecipeCountRow;
-import com.korit.team_ljco.dto.RecipeIngredientResponse;
-import com.korit.team_ljco.dto.RecipeListResponse;
+import com.korit.team_ljco.dto.*;
 import com.korit.team_ljco.entity.Ingredient;
 import com.korit.team_ljco.entity.Recipe;
+import com.korit.team_ljco.entity.RecipeIngredient;
+import com.korit.team_ljco.entity.RecipeStep;
 import com.korit.team_ljco.mapper.RecipeMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -26,6 +28,12 @@ public class RecipeService {
     //등록 후 경과일
     private Integer daysPassed;
 
+    public List<RecipeResponse> getAllRecipes() {
+        List<Recipe> recipes = recipeMapper.selectAllRecipes();
+        return recipes.stream()
+                .map(RecipeResponse::from)
+                .collect(Collectors.toList());
+    }
 
     //전체 레시피 조회
     public List<RecipeListResponse> findRecipes(int page, int userId) {
@@ -60,6 +68,7 @@ public class RecipeService {
             recipeRowsList.add(recipeRow);
         }
         return  recipeRowsList;
+    } // ← 이 중괄호가 누락되어 있었습니다!
 
     /**
      * 레시피 검색
@@ -69,6 +78,17 @@ public class RecipeService {
         return recipes.stream()
                 .map(RecipeResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 레시피 상세 조회 (ID로 조회)
+     */
+    public RecipeResponse getRecipeById(Long rcpId) {
+        Recipe recipe = recipeMapper.selectRecipeById(rcpId);
+        if (recipe == null) {
+            throw new RuntimeException("레시피를 찾을 수 없습니다. ID: " + rcpId);
+        }
+        return RecipeResponse.from(recipe);
     }
 
     /**
@@ -223,7 +243,3 @@ public class RecipeService {
         return recipeMapper.countAllRecipes();
     }
 }
-
-
-
-
