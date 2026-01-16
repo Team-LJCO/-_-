@@ -21,12 +21,10 @@ public class RecipeController {
     private final RecipeService recipeService;
 
     //레시피 목록 조회 컨트롤러
-    @GetMapping("/all")
+    @GetMapping
     public List<RecipeListResponse> getAllRecipes(
             @RequestParam(defaultValue = "1" )int page, @RequestParam int userId) {
         List<RecipeListResponse> recipeListSelect = recipeService.findRecipes(page,userId);
-
-
          return recipeListSelect;
     }
 
