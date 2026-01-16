@@ -255,7 +255,7 @@
         GROUP BY ri.rcp_id
         ) user_counts ON recipe_counts.rcp_id = user_counts.rcp_id
     </select>
-    <select id="searchRecipesByKeyword" resultType="RecipeListWithIngredientsMap">
+    <select id="searchRecipesByKeyword" resultMap="RecipeListWithIngredientsMap">
         SELECT
         rcp_id,
         rcp_name,
