@@ -4,7 +4,7 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.korit.team_ljco.mapper.RecipeMapper">
-
+    
     <resultMap id="RecipeListWithIngredientsMap"
                type="com.korit.team_ljco.dto.RecipeListResponse">
         <id property="rcpId" column="rcp_id"/>
@@ -32,7 +32,7 @@
             r.rcp_img_url,
             r.rcp_view_count,
             r.level,
-            i.ing_name,
+            i.ing_name
         from
             rcp r
         left join rcp_ing ri on r.rcp_id = ri.rcp_id
@@ -195,5 +195,16 @@
         where
             ri.rcp_id = #{rcpId};
     </select>
-
+    <select id="searchRecipesByKeyword" resultType="RecipeListWithIngredientsMap">
+        SELECT
+        rcp_id,
+        rcp_name,
+        rcp_img_url,
+        rcp_view_count,
+        level
+        FROM rcp
+        WHERE rcp_name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY rcp_id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
 </mapper>
