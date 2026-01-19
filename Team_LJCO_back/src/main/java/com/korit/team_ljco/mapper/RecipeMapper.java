@@ -19,18 +19,6 @@ public interface RecipeMapper {
     List<RecipeListResponse> getRecipes(@Param("pageSize") int pageSize,
                                         @Param("offset") int offset,
                                         @Param("userId") int userId);
-
-    //일치율
-    //한 사람에 대한 레시피라서 userid는 하나 rcpids는 여러개라 리스트
-    List<RecipeCount> getMatchRate(@Param("userId") int userId,
-                                    @Param("rcpIds") List<Integer> rcpIds);
-
-    //며칠남았는지
-    int getDaysLeft();
-
-    //난이도
-    int getLevel();
-
     // 레시피 조회
     Recipe selectRecipeById(Long rcpId);
 

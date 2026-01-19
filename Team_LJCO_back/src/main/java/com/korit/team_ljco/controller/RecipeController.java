@@ -20,19 +20,10 @@ public class RecipeController {
     @GetMapping
     public List<RecipeListResponse> getAllRecipes(
             @RequestParam(defaultValue = "1") int page,
-            // required = false를 추가하여 userId가 없어도 요청을 허용합니다.
-            @RequestParam(required = false, defaultValue = "0") int userId) {
-
-        List<RecipeListResponse> recipeListSelect = recipeService.findRecipes(page, userId);
-        return recipeListSelect;
+            @RequestParam int userId) {
+        return recipeService.findRecipes(page, userId);
     }
 
-    @GetMapping("/MatchRate")
-    public List<RecipeCountRow> getMatchRate(
-            @RequestParam(required = false, defaultValue = "0") int userId,
-            @RequestParam List<Integer> rcpIds) {
-        return recipeService.findMateRate(userId, rcpIds);
-    }
     // RecipeController.java
     @GetMapping("/search")
     public List<RecipeListResponse> searchRecipes(

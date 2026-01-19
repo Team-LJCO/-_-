@@ -11,6 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +34,7 @@ public class RecipeService {
 
     public List<RecipeResponse> getAllRecipes() {
         List<Recipe> recipes = recipeMapper.selectAllRecipes();
+
         return recipes.stream()
                 .map(RecipeResponse::from)
                 .collect(Collectors.toList());
@@ -39,6 +44,17 @@ public class RecipeService {
     public List<RecipeListResponse> findRecipes(int page, int userId) {
         int pageSize = 10;
         int offset = (page - 1) * pageSize;
+        List<RecipeListResponse> recipesList = recipeMapper.getRecipes(pageSize, offset, userId);
+
+        LocalDate today = LocalDate.now();
+        for (RecipeListResponse r : recipesList) {
+            LocalDate oldDay = r.getOldestIngredient();
+            if (oldDay != null) {
+                int days = (int) ChronoUnit.DAYS.between(oldDay,today);
+                r.setPassedDay(days);
+            }
+        }
+
 
         //화면에 출력할것만
         return recipeMapper.getRecipes(pageSize, offset, userId);
@@ -52,24 +68,6 @@ public class RecipeService {
         // 우리가 Mapper에 새로 만든 메서드를 호출합니다.
         return recipeMapper.searchRecipesByKeyword(pageSize, offset, userId, keyword);
     }
-    public List<RecipeCountRow> findMateRate(int userId, List<Integer> rcpIds) {
-        List<RecipeCount> countAll =  recipeMapper.getMatchRate(userId,rcpIds);
-        List<RecipeCountRow> recipeRowsList = new ArrayList<>();
-        //내 재료 겹치는 개수, 재료 레시피 개수 구하기
-        for(RecipeCount cnt : countAll) {
-            int recipeCount = cnt.getRecipeCount();
-            int myCount = cnt.getMyCount();
-
-            int recipeMatchRate = (int) ((double) myCount / recipeCount * 100);
-
-            RecipeCountRow recipeRow = RecipeCountRow.builder()
-                    .rate(recipeMatchRate)
-                    .build();
-            recipeRowsList.add(recipeRow);
-        }
-        return  recipeRowsList;
-    }
-
     /**
      * 레시피 검색
      */
