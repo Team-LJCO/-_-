@@ -2,6 +2,7 @@ package com.korit.team_ljco.config;
 
 import com.korit.team_ljco.filter.JwtAuthenticationFilter;
 import com.korit.team_ljco.security.JwtAuthenticationEntryPoint;
+import com.korit.team_ljco.security.OAuth2FailureHandler;
 import com.korit.team_ljco.security.OAuth2SuccessHandler;
 import com.korit.team_ljco.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final OAuth2SuccessHandler oauth2SuccessHandler;
+    private final OAuth2FailureHandler oauth2FailureHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
@@ -52,6 +54,16 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
+
+                                // SecurityConfig.java의 71~74번 라인 근처 수정
+// 3. 공개 API - 재료, 레시피 (인증 불필요)
+                                .requestMatchers(
+                                        "/api/ingredients/**",
+                                        "/api/recipes/**", // 이 부분이 /api/recipes/search를 포함해야 합니다.
+                                        "/recipes/**",
+                                        "/images/**",
+                                        "/error"
+                                ).permitAll()
 
                         // 2. OAuth2 및 인증 관련 경로
                         .requestMatchers(
@@ -83,6 +95,7 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oauth2SuccessHandler)
+                        .failureHandler(oauth2FailureHandler)
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)

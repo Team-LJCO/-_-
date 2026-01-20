@@ -5,11 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RecipeCountRow {
-    private int rate;
-
+public class IngredientName {
+    private Integer ingId;
+    private String ingName;
 }
