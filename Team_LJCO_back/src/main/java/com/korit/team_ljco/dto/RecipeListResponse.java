@@ -22,14 +22,8 @@ public class RecipeListResponse {
     //난이도 출력
     private Integer level;
 
-    //필요한 재료 출력
+
     private List<RecipeIngredient> ingredients;
-
-    //일치율
-    private Integer matchRate;
-
-    //등록 후 경과일
-    private Integer daysPassed;
 
 
 }

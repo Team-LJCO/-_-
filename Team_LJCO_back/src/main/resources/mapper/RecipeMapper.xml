@@ -38,7 +38,7 @@
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
-    <resultMap id="RecipeListWithIngredientsMap"
+    <resultMap id="RecipeListMap"
                type="com.korit.team_ljco.dto.RecipeListResponse">
         <id property="rcpId" column="rcp_id"/>
         <result property="rcpName" column="rcp_name"/>
@@ -47,18 +47,13 @@
         <result property="level" column="level"/>
         <collection property="ingredients" ofType="com.korit.team_ljco.entity.RecipeIngredient">
             <result property="ingId" column="ing_id"/>
-            <result property="ingName" column="ing_name"/>
+            <result property="matchedIngId" column="matched_ing_id"/>
+            <result property="redMatchedIng" column="redMatched_ing"/>
         </collection>
     </resultMap>
 
-    <!-- MatchRate용 ResultMap 수정 -->
-    <resultMap id="MatchRateMap" type="com.korit.team_ljco.dto.RecipeCount">
-        <result property="recipeCount" column="recipe_count"/>
-        <result property="myCount" column="my_count"/>
-    </resultMap>
 
-    <!-- getRecipes 쿼리 수정 (컬럼명 오류 수정) -->
-    <select id="getRecipes" resultMap="RecipeListWithIngredientsMap">
+    <select id="getRecipes" resultMap="RecipeListMap">
         SELECT
             r.rcp_id,
             r.rcp_name,
@@ -66,18 +61,23 @@
             r.rcp_view_count,
             r.level,
             i.ing_id,
-            i.ing_name
-        FROM (
-            /* 1. 먼저 레시피 테이블에서 중복 없이 10개만 가져옵니다 */
-            SELECT rcp_id, rcp_name, rcp_img_url, rcp_view_count, level
-            FROM rcp
-            ORDER BY rcp_id DESC
-            LIMIT #{pageSize} OFFSET #{offset}
+            ui.ing_id as matchedIngId,
+            ui2.ing_id as redMatchedIng
+        from (
+            select rcp_id, rcp_name, rcp_img_url, rcp_view_count,level
+        from rcp
         ) r
-        /* 2. 잘라낸 10개 레시피에 대해서만 재료를 조인합니다 */
-        LEFT JOIN rcp_ing ri ON r.rcp_id = ri.rcp_id
-        LEFT JOIN ingredients i ON ri.ing_id = i.ing_id
-        ORDER BY r.rcp_id DESC
+        join rcp_ing ri
+        on ri.rcp_id = r.rcp_id
+        join ingredients i
+        on i.ing_id = ri.ing_id
+        left join user_ingredients ui
+        on ui.user_id = #{userId}
+        and ui.ing_id = ri.ing_id
+        left join user_ingredients ui2
+        on ui2.user_id = #{userId}
+        and ui2.ing_id = ri.ing_id
+        and DATEDIFF(CURRENT_DATE, ui2.created_at) >= 15;
     </select>
 
     <!-- selectRecipeById 쿼리 추가 (누락되어 있었음!) -->
