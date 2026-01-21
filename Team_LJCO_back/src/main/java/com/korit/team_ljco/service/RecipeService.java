@@ -39,21 +39,30 @@ public class RecipeService {
 
         //화면에 출력할것만
         List<RecipeListResponse> recipesList = recipeMapper.getRecipes(pageSize, offset, userId);
+
         for (RecipeListResponse r : recipesList) {
             List<RecipeIngredientMatch> ingredients = r.getIngredients();
+            int count = 0;
+
             for (RecipeIngredientMatch m : ingredients) {
                 if(m.getMatchedIngId() == null) {
                     m.setMatchedColor("N");
+
                 } else if (m.getMatchedIngId() != null) {
                     m.setMatchedColor("G");
+                    count++;
                     if(m.getRedMatchedIng() != null) {
                         m.setMatchedColor("R");
                     }
                 }
 
             }
-
+            int total=recipesList.size();
+            int rate = (int)(total == 0 ? 0 : (count * 100.0) / total) ;
+            r.setMatchRate(rate);
         }
+
+
         return recipesList;
 
 
