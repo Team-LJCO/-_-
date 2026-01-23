@@ -33,7 +33,7 @@ public class RecipeService {
 
     //전체 레시피 조회
     public List<RecipeListResponse> findRecipes(int page, Long userId,String keyword) {
-        int pageSize = 10;
+        int pageSize = 9;
         int offset = (page - 1) * pageSize;
         List<RecipeListResponse> recipesList;
 
