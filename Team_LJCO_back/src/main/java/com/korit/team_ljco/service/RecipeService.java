@@ -111,6 +111,7 @@ public class RecipeService {
                         .ingId(ingDto.getIngId())
                         .rcpIngAmt(ingDto.getRcpIngAmt())
                         .rcpIngOrd(ingDto.getRcpIngOrd())
+                        .hasIng(ingDto.isHasIng())
                         .build();
                 recipeMapper.insertRecipeIngredient(recipeIngredient);
             }
@@ -164,6 +165,7 @@ public class RecipeService {
                         .ingId(ingDto.getIngId())
                         .rcpIngAmt(ingDto.getRcpIngAmt())
                         .rcpIngOrd(ingDto.getRcpIngOrd())
+                        .hasIng(ingDto.isHasIng())
                         .build();
                 recipeMapper.insertRecipeIngredient(recipeIngredient);
             }

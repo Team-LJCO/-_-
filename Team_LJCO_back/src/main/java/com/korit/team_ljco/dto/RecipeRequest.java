@@ -27,6 +27,7 @@ public class RecipeRequest {
         private Integer ingId;
         private String rcpIngAmt;
         private Integer rcpIngOrd;
+        private boolean hasIng;
     }
     
     @Data
