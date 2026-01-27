@@ -14,7 +14,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 업로드된 이미지를 URL로 접근 가능하도록 설정
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("file:///Users/ominsuk/Documents/gov/all_food_items/");
     }
@@ -27,7 +26,6 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowCredentials(true);
 
-        // 이미지 접근을 위한 CORS 설정
         registry.addMapping("/images/**")
                 .allowedOrigins("http://localhost:3000")
                 .allowedMethods("GET")
