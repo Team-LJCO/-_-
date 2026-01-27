@@ -40,6 +40,7 @@
         <result property="stepImgUrl" column="step_img_url"/>
         <result property="createdAt" column="created_at"/>
     </resultMap>
+
     <resultMap id="RecipeListWithIngredientsMap"
                type="com.korit.team_ljco.dto.RecipeListResponse">
         <id property="rcpId" column="rcp_id"/>
@@ -52,12 +53,6 @@
             <result property="ingName" column="ing_name"/>
         </collection>
     </resultMap>
-    <!-- MatchRate용 ResultMap 수정 -->
-    <resultMap id="MatchRateMap" type="com.korit.team_ljco.dto.RecipeCount">
-        <result property="recipeCount" column="recipe_count"/>
-        <result property="myCount" column="my_count"/>
-    </resultMap>
-
 
     <resultMap id="RecipeListMap"
                type="com.korit.team_ljco.dto.RecipeListResponse">
@@ -66,8 +61,12 @@
         <result property="rcpImgUrl" column="rcp_img_url"/>
         <result property="rcpViewCount" column="rcp_view_count"/>
         <result property="level" column="level"/>
+        <result property="matchRate" column="match_rate"/>
+        <result property="totalCount" column="total_count"/>
+
         <collection property="ingredients" ofType="com.korit.team_ljco.entity.RecipeIngredientMatch">
-            <result property="ingId" column="ing_id"/>
+            <id property="ingId" column="ing_id"/>
+            <result property="ingName" column="ing_name"/>
             <result property="matchedIngId" column="matched_ing_id"/>
             <result property="redMatchedIng" column="redmatched_ing"/>
         </collection>
@@ -81,12 +80,37 @@
             r.rcp_img_url,
             r.rcp_view_count,
             r.level,
+            r.match_rate,
+            r.total_count,
             i.ing_id,
+            i.ing_name,
             ui.ing_id as matched_ing_id,
             ui2.ing_id as redmatched_ing
         from (
-            select rcp_id, rcp_name, rcp_img_url, rcp_view_count,level
-        from rcp
+            select rcp_id, rcp_name, rcp_img_url, rcp_view_count,level, count(*) over() as total_count,
+        (
+        select count(ui2.ing_id) / count(ri2.ing_id) * 100
+        from rcp_ing ri2
+        left join user_ingredients ui2
+        on ui2.ing_id = ri2.ing_id
+        and ui2.user_id = #{userId}
+        where ri2.rcp_id = rcp.rcp_id
+        ) as match_rate
+        from rcp rcp
+        <choose>
+            <when test="sort == 'VIEW_DESC'">
+                order by rcp_view_count desc
+            </when>
+            <when test="sort == 'LEVEL_DESC'">
+                order by level desc
+            </when>
+            <when test="sort == 'MATCHRATE_DESC'">
+                order by match_rate desc
+            </when>
+            <otherwise>
+                order by rcp.rcp_id desc
+            </otherwise>
+        </choose>
         limit #{pageSize} offset #{offset}
         ) r
         join rcp_ing ri
@@ -100,6 +124,61 @@
         on ui2.user_id = #{userId}
         and ui2.ing_id = ri.ing_id
         and DATEDIFF(CURRENT_DATE, ui2.created_at) >= 15;
+    </select>
+
+
+    <select id="getRecipesByKeyword" resultMap="RecipeListMap">
+        SELECT
+            r.rcp_id,
+            r.rcp_name,
+            r.rcp_img_url,
+            r.rcp_view_count,
+            r.level,
+            r.match_rate,
+            r.total_count,
+            i.ing_id,
+            i.ing_name,
+            ui.ing_id as matched_ing_id,
+            ui2.ing_id as redmatched_ing
+        from (
+        select rcp_id, rcp_name, rcp_img_url, rcp_view_count,level, count(*) over() as total_count,
+        (
+        select count(ui2.ing_id) / count(ri2.ing_id) * 100
+        from rcp_ing ri2
+        left join user_ingredients ui2
+        on ui2.ing_id = ri2.ing_id
+        and ui2.user_id = #{userId}
+        where ri2.rcp_id = rcp.rcp_id
+        ) as match_rate
+        from rcp rcp
+        where rcp_name like concat('%', #{keyword}, '%')
+        <choose>
+            <when test="sort == 'VIEW_DESC'">
+                order by rcp_view_count desc
+            </when>
+            <when test="sort == 'LEVEL_DESC'">
+                order by level desc
+            </when>
+            <when test="sort == 'MATCHRATE_DESC'">
+                order by match_rate desc
+            </when>
+            <otherwise>
+                order by rcp.rcp_id desc
+            </otherwise>
+        </choose>
+        limit #{pageSize} offset #{offset}
+        ) r
+        join rcp_ing ri
+            on ri.rcp_id = r.rcp_id
+        join ingredients i
+            on i.ing_id = ri.ing_id
+        left join user_ingredients ui
+            on ui.user_id = #{userId}
+            and ui.ing_id = ri.ing_id
+        left join user_ingredients ui2
+            on ui2.user_id = #{userId}
+            and ui2.ing_id = ri.ing_id
+            and DATEDIFF(CURRENT_DATE, ui2.created_at) >= 15;
     </select>
 
     <!-- selectRecipeById 쿼리 추가 (누락되어 있었음!) -->
@@ -251,55 +330,5 @@
     </select>
 
 
-    <!-- getMatchRate 쿼리 수정 (foreach 추가하여 여러 rcpIds 처리) -->
-    <select id="getMatchRate" resultMap="MatchRateMap">
-        SELECT
-        recipe_counts.rcp_id,
-        recipe_counts.recipe_count,
-        COALESCE(user_counts.my_count, 0) as my_count
-        FROM (
-        SELECT
-        ri.rcp_id,
-        COUNT(ri.ing_id) as recipe_count
-        FROM rcp_ing ri
-        WHERE ri.rcp_id IN
-        <foreach collection="rcpIds" item="rcpId" open="(" separator="," close=")">
-            #{rcpId}
-        </foreach>
-        GROUP BY ri.rcp_id
-        ) recipe_counts
-        LEFT JOIN (
-        SELECT
-        ri.rcp_id,
-        COUNT(ri.ing_id) as my_count
-        FROM rcp_ing ri
-        INNER JOIN user_ing ui ON ui.ing_id = ri.ing_id
-        WHERE ri.rcp_id IN
-        <foreach collection="rcpIds" item="rcpId" open="(" separator="," close=")">
-            #{rcpId}
-        </foreach>
-        AND ui.user_id = #{userId}
-        GROUP BY ri.rcp_id
-        ) user_counts ON recipe_counts.rcp_id = user_counts.rcp_id
-    </select>
-    <select id="searchRecipesByKeyword" resultMap="RecipeListWithIngredientsMap">
-        SELECT
-        r.rcp_id, r.rcp_name, r.rcp_img_url, r.rcp_view_count, r.level,
-        i.ing_id, i.ing_name,
-        /* 💡 추가된 부분: 사용자의 냉장고와 대조하여 D-Day 계산 */
-        DATEDIFF(CURRENT_TIMESTAMP, ui.created_at) AS d_day,
-        CASE WHEN ui.user_ing_id IS NOT NULL THEN 1 ELSE 0 END AS has_ing
-        FROM (
-        SELECT rcp_id, rcp_name, rcp_img_url, rcp_view_count, level
-        FROM rcp
-        WHERE rcp_name LIKE CONCAT('%', #{keyword}, '%')
-        ORDER BY rcp_id DESC
-        LIMIT #{pageSize} OFFSET #{offset}
-        ) r
-        LEFT JOIN rcp_ing ri ON r.rcp_id = ri.rcp_id
-        LEFT JOIN ingredients i ON ri.ing_id = i.ing_id
-        /* 💡 사용자의 냉장고 재료와 조인 */
-        LEFT JOIN user_ingredients ui ON i.ing_id = ui.ing_id AND ui.user_id = #{userId}
-        ORDER BY r.rcp_id DESC
-    </select>
+
 </mapper>

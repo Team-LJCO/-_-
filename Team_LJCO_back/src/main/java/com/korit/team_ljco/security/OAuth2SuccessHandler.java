@@ -32,12 +32,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         // 2. JWT 토큰 생성
         String accessToken = jwtTokenProvider.createAccessToken(user);
+        Long userId = user.getUserId();
 
         // ★ 여기에 로그를 넣어주세요 ★
         System.out.println("OAuth2 로그인 성공: " + user.getUserEmail());
         System.out.println("설정된 Redirect URI: " + redirectUri);
 
-        String finalTargetUrl = redirectUri + "?accessToken=" + accessToken;
+        String finalTargetUrl = redirectUri + "?accessToken=" + accessToken
+                + "&userId=" + userId;
         System.out.println("최종 이동 주소: " + finalTargetUrl);
 
         // 3. 프론트엔드로 리다이렉트

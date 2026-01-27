@@ -1,7 +1,5 @@
 package com.korit.team_ljco.mapper;
 
-import com.korit.team_ljco.dto.RecipeCount;
-import com.korit.team_ljco.dto.RecipeCountRow;
 import com.korit.team_ljco.dto.RecipeListResponse;
 import com.korit.team_ljco.entity.Recipe;
 import com.korit.team_ljco.entity.RecipeIngredient;
@@ -18,12 +16,16 @@ public interface RecipeMapper {
     //페이지 넘김을 고려한 pagesize 생성 => 서비스에서 계산함
     List<RecipeListResponse> getRecipes(@Param("pageSize") int pageSize,
                                         @Param("offset") int offset,
-                                        @Param("userId") Long userId);
+                                        @Param("userId") Long userId,
+                                        @Param("sort") String sort);
 
-    //일치율
-    //한 사람에 대한 레시피라서 userid는 하나 rcpids는 여러개라 리스트
-    List<RecipeCount> getMatchRate(@Param("userId") Long userId,
-                                    @Param("rcpIds") List<Integer> rcpIds);
+
+    List<RecipeListResponse> getRecipesByKeyword(@Param("pageSize") int pageSize,
+                                        @Param("offset") int offset,
+                                        @Param("userId") Long userId,
+                                        @Param("keyword") String keyword,
+                                        @Param("sort") String sort);
+
 
     //며칠남았는지
     int getDaysLeft();

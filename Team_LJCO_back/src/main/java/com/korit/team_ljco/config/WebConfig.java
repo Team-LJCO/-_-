@@ -14,8 +14,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:///Users/ominsuk/Documents/gov/all_food_items/");
+
     }
 
     @Override

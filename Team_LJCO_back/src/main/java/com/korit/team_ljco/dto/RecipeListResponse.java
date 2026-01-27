@@ -1,6 +1,5 @@
 package com.korit.team_ljco.dto;
 
-import com.korit.team_ljco.entity.RecipeIngredient;
 import com.korit.team_ljco.entity.RecipeIngredientMatch;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +22,7 @@ public class RecipeListResponse {
     //난이도 출력
     private Integer level;
     private int matchRate;
+    private Integer totalCount;
 
 
     private List<RecipeIngredientMatch> ingredients;

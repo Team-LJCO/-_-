@@ -1,71 +1,69 @@
 /** @jsxImportSource @emotion/react */
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
-import { Global } from "@emotion/react"; 
+import { Global, keyframes } from "@emotion/react"; 
 import { fontImport, s as commonS } from "../Home/styles"; 
 import { s as recipeS } from "./styles"; 
 import RecipeSearchModal from "../../components/recipeModal/RecipeSearchModal";
 import { useNavigate, useLocation } from "react-router-dom"; // 💡 useLocation 추가
-import { getColorByDay } from "../../utils/colorUtils";
+import Pagination from "../../components/common/Pagination";
+import RecipeIngredientMark from "./RacipeIngredientMark";
+
 
 function Recipe() {
     const navigate = useNavigate();
     const location = useLocation();
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
+    const [sort, setSort] = useState("VIEW_DESC");
 
     const [isLogin] = useState(!!localStorage.getItem("accessToken")); // 대소문자 주의: accessToken
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(1); // 💡 페이지 상태 추가
-    const [hasMore, setHasMore] = useState(true); // 💡 더 불러올 데이터가 있는지 확인
+
+
 
     const [recipeSearchTerm, setRecipeSearchTerm] = useState("");
     const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
     const [selectedRecipe, setSelectedRecipe] = useState(null);
     
 
-    // 💡 무한 스크롤 관찰을 위한 Ref
-    const observer = useRef();
-    const lastRecipeElementRef = useCallback(node => {
-        if (loading) return;
-        if (observer.current) observer.current.disconnect();
-        observer.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore) {
-                setPage(prevPage => prevPage + 1); // 바닥에 닿으면 페이지 증가
-            }
-        });
-        if (node) observer.current.observe(node);
-    }, [loading, hasMore]);
 
-    // 💡 데이터 페칭 로직 수정
-   // Recipe.jsx 내부의 useEffect를 이 내용으로 교체하세요.
+
 useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const keywordParam = params.get("keyword");
+    const urlParams = new URLSearchParams(location.search);
+    const urlPage = Number(urlParams.get("page") ?? 1);
+
+
+    
+    const urlKeyword = urlParams.get("keyword");
+    const urlSort = urlParams.get("sort") ?? "VIEW_DESC";
+    setSort(urlSort);
+    setPage(urlPage);
     
     const fetchRecipes = async () => {
         setLoading(true);
         const token = localStorage.getItem("accessToken");
         
-        // 💡 로그인한 유저의 실제 ID를 가져옵니다. (자동 연동)
+        // 유저 없을시 32번 유저로 로그인(비로그인 기능 만들어야함)
         const currentUserId = localStorage.getItem("userId") || 32;
 
         try {
-            const url = keywordParam 
-                ? `http://localhost:8080/api/recipes/search` 
-                : `http://localhost:8080/api/recipes`;
+            const url = `http://localhost:8080/api/recipes`;
 
             const res = await axios.get(url, {
                 params: { 
-                    page: page, 
-                    userId: currentUserId, // 💡 이제 자동화된 ID가 전달됩니다!
-                    keyword: keywordParam || undefined 
+                    page: urlPage, 
+                    userId: currentUserId, 
+                    keyword: urlKeyword || undefined,
+                    sort: urlSort,
                 },
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
-            setRecipes(prev => page === 1 ? res.data : [...prev, ...res.data]);
-            if (res.data.length < 10) setHasMore(false);
-            if (keywordParam) setRecipeSearchTerm(keywordParam);
+            const data = res.data;
+                setRecipes(Array.isArray(data.recipes) ? data.recipes : []);
+                setTotalPages(typeof data.totalPages === "number" ? data.totalPages : 0);
+
 
         } catch (err) {
             console.error("데이터 로딩 실패:", err);
@@ -75,41 +73,31 @@ useEffect(() => {
     };
 
     fetchRecipes();
-}, [page, location.search]);
+}, [location.search]);
 
-    const handleRecipeSearch = async () => {
+const handleSort = (sort) => {
+    const params = new URLSearchParams(location.search);
+
+    params.set("sort", sort);
+    params.set("page", "1");
+    setPage(1);
+    navigate(`/recipe?${params.toString()}`);
+}
+
+    const handleRecipeSearch = () => {
     if (!recipeSearchTerm.trim()) return;
-    
-    setLoading(true);
-    setPage(1); 
-    const token = localStorage.getItem("accessToken");
-    // 💡 여기서도 동일하게 실제 유저 ID 또는 테스트용 32를 가져옵니다.
-    const currentUserId = localStorage.getItem("userId") || 32;
-    
-    try {
-        const res = await axios.get(`http://localhost:8080/api/recipes/search`, {
-            params: { 
-                page: 1, 
-                userId: currentUserId, // 💡 0에서 currentUserId로 수정!
-                keyword: recipeSearchTerm 
-            },
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        setRecipes(res.data);
-        setHasMore(false); 
-    } catch (err) {
-        console.error("검색 실패:", err);
-    } finally {
-        setLoading(false);
-    }
-};
+    const params = new URLSearchParams(location.search);
+    params.set("keyword",recipeSearchTerm);
+    params.set("sort", sort);
+    params.set("page", "1");
+
+    navigate(`/recipe?${params.toString()}`);
+    };
     return (
         <>
             <Global styles={fontImport} /> 
             <div css={commonS.wrapper}>
                 <div css={commonS.container}>
-                    {/* 상단 헤더 (변화 없음) */}
                     <div css={commonS.headerCard}>
                         <div css={commonS.logo} onClick={() => navigate("/home")}>
                             <div className="logo-box">🧊</div> 냉장고 파먹기
@@ -123,6 +111,17 @@ useEffect(() => {
                                 onChange={(e) => setRecipeSearchTerm(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleRecipeSearch()}
                             />
+                        </div>
+                        <div>
+                            <button onClick={() => handleSort("VIEW_DESC")}>
+                                조회수순
+                            </button>
+                            <button onClick={() => handleSort("LEVEL_DESC")}>
+                                난이도순
+                            </button>
+                            <button onClick={() => handleSort("MATCHRATE_DESC")}>
+                                매치율순
+                            </button>
                         </div>
                         <div css={commonS.navGroup}>
                             <button css={commonS.pillBtn(false)} onClick={() => navigate("/home")}>🏠 식재료</button>
@@ -143,7 +142,7 @@ useEffect(() => {
                             const isLast = recipes.length === index + 1;
                             return (
                                 <div 
-                                    ref={isLast ? lastRecipeElementRef : null} 
+                                   
                                     key={`${recipe.rcpId}-${index}`} // 💡 중복 키 에러 방지를 위해 index 조합
                                     css={recipeS.recipeCard}
                                     onClick={() => {
@@ -157,12 +156,22 @@ useEffect(() => {
                                 </div>
                             );
                         })}
-                        {loading && <div style={{gridColumn: '1/-1', textAlign: 'center', padding: '20px'}}>추가 레시피 로딩 중...</div>}
+                        {loading && <div style={{gridColumn: '1/-1', textAlign: 'center', padding: '20px'}}>
+                        추가 레시피 로딩 중...</div>}
                     </div>
+                    <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    onChange={(p) => {
+                        const params = new URLSearchParams(location.search);
+                        params.set("page", String(p));
+                        navigate(`/recipe?${params.toString()}`);
+                    }}
+                    />
                 </div>
 
                 {isRecipeModalOpen && <RecipeSearchModal 
-        recipe={selectedRecipe} // 💡 검색어가 아니라 선택된 '레시피 객체'를 넘김
+        recipe={selectedRecipe} 
         onClose={() => {
             setIsRecipeModalOpen(false);
             setSelectedRecipe(null);
@@ -173,24 +182,28 @@ useEffect(() => {
     );
 }
 
-// 💡 반복되는 카드 내용을 별도 컴포넌트로 분리
-// Recipe.jsx 내 수정된 부분 확인
-// 💡 누락되었던 카드 상세 정보(사진, 일치율, 난이도 등)를 다시 포함한 컴포넌트입니다.
+
+
 function RecipeCardContent({ recipe }) {
-    // 💡 데이터 로직 유지
-    const totalIng = recipe.ingredients?.length || 0;
-    const myIng = recipe.ingredients?.filter(ing => ing.hasIng === true || ing.hasIng === 1)?.length || 0;
-    const matchRate = totalIng > 0 ? Math.round((myIng / totalIng) * 100) : 0;
+
+    const matchRate = Number(recipe.matchRate ?? 0);
+
+    const getMatchRateText = (rate) => {
+        if(rate <= 0) return '재료를 구매하셔야 해요!';
+        if(rate <50) return '조금만 더 있으면 돼요';
+        if(rate < 70) return '거의 만들 수 있어요';
+        return '지금 바로 도전 가능!';
+    };
 
     return (
         <div style={{ borderRadius: '30px', overflow: 'hidden' }}>
-            {/* 1. 사진 영역 (상단 배치 및 꽉 채우기) */}
+            
             <div className="thumb" style={{ 
                 position: 'relative', 
                 width: '100%', 
                 height: '240px', 
                 margin: 0, 
-                borderRadius: '0' // 부모에서 제어하므로 0으로 설정
+                borderRadius: '0' 
             }}>
                 <img 
                     src={recipe.rcpImgUrl} 
@@ -198,7 +211,7 @@ function RecipeCardContent({ recipe }) {
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                 />
                 
-                {/* 💡 사진 위에 뜨는 배지 그룹 (일치율, 난이도) */}
+                
                 <div style={{ 
                     position: 'absolute', 
                     top: '15px', 
@@ -217,7 +230,7 @@ function RecipeCardContent({ recipe }) {
                         fontWeight: '800',
                         boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                     }}>
-                        일치율 {matchRate}%
+                        {getMatchRateText(matchRate)}{'\u00A0\u00A0'}{matchRate}%
                     </span>
                     <span style={{ 
                         background: 'rgba(255, 112, 67, 0.9)', 
@@ -228,12 +241,11 @@ function RecipeCardContent({ recipe }) {
                         fontWeight: '800',
                         boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                     }}>
-                        난이도 {recipe.level === 1 ? '쉬움' : recipe.level === 2 ? '보통' : '어려움'}
+                         {recipe.level === 1 ? '쉬움' : recipe.level === 2 ? '보통' :  recipe.level === 2 ? '중급' : '어려움'}
                     </span>
                 </div>
             </div>
 
-            {/* 2. 카드 하단 텍스트 정보 */}
             <div style={{ padding: '20px 5px' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '8px' }}>{recipe.rcpName}</h3>
                 <div className="meta" style={{ display: 'flex', gap: '15px', fontSize: '12px', color: '#FF7043', fontWeight: '700', marginBottom: '15px' }}>
@@ -244,32 +256,14 @@ function RecipeCardContent({ recipe }) {
 
                 {/* 3. 재료 리스트 */}
                 <div className="ingredients">
-                    <div className="label" style={{ fontSize: '11px', color: '#999', marginBottom: '8px' }}>필요한 재료</div>
+                    <div className="label" style={{ fontSize: '11px', color: '#999', marginBottom: '8px' }}>
+                        필요한 재료</div>
+
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {recipe.ingredients && recipe.ingredients.map((ing, idx) => {
-                            const hasIngredient = ing.hasIng === true || ing.hasIng === 1 || ing.has_ing === 1;
-                            const dDayValue = ing.dDay !== undefined && ing.dDay !== null ? ing.dDay : ing.dday;
-
-                            const bgColor = hasIngredient ? getColorByDay(dDayValue) : "#F0F0F0";
-                            const textColor = hasIngredient ? "#000" : "#999";
-
-                            return (
-                                <span 
-                                    key={idx} 
-                                    style={{ 
-                                        backgroundColor: bgColor, 
-                                        color: textColor,
-                                        fontWeight: hasIngredient ? 'bold' : 'normal',
-                                        padding: '4px 10px',
-                                        borderRadius: '8px',
-                                        fontSize: '11px',
-                                        border: hasIngredient ? 'none' : '1px solid #eee'
-                                    }}
-                                >
-                                    {ing.ingName}
-                                </span>
-                            );
-                        })}
+                        {recipe.ingredients?.map((ingredients, idx) => (
+                            <RecipeIngredientMark key={idx} ingredients={ingredients} 
+                            />
+                        ))}
                     </div>
                 </div>
             </div>

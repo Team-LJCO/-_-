@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,12 +18,6 @@ import java.util.stream.Collectors;
 public class RecipeService {
 
     private final RecipeMapper recipeMapper;
-    //일치율
-    private Integer matchRate;
-
-    //등록 후 경과일
-    private Integer daysPassed;
-
     public List<RecipeResponse> getAllRecipes() {
         List<Recipe> recipes = recipeMapper.selectAllRecipes();
         return recipes.stream()
@@ -32,66 +25,51 @@ public class RecipeService {
                 .collect(Collectors.toList());
     }
 
-    //전체 레시피 조회
-    public List<RecipeListResponse> findRecipes(int page, Long userId) {
-        int pageSize = 10;
+    //페이징된 레시피 조회
+    public RecipePageResponseDTO findRecipes(int page, Long userId, String keyword, String sort) {
+        int pageSize = 9;
         int offset = (page - 1) * pageSize;
+        List<RecipeListResponse> recipesList;
 
-        //화면에 출력할것만
-        List<RecipeListResponse> recipesList = recipeMapper.getRecipes(pageSize, offset, userId);
+        if (keyword == null || keyword.isEmpty()) {
+            recipesList = recipeMapper.getRecipes(pageSize, offset, userId, sort);
+        } else {
+            recipesList = recipeMapper.getRecipesByKeyword(pageSize, offset, userId, keyword, sort);
+        }
 
         for (RecipeListResponse r : recipesList) {
             List<RecipeIngredientMatch> ingredients = r.getIngredients();
             int count = 0;
 
             for (RecipeIngredientMatch m : ingredients) {
-                if(m.getMatchedIngId() == null) {
+                if (m.getMatchedIngId() == null) {
                     m.setMatchedColor("N");
 
                 } else if (m.getMatchedIngId() != null) {
                     m.setMatchedColor("G");
                     count++;
-                    if(m.getRedMatchedIng() != null) {
+                    if (m.getRedMatchedIng() != null) {
                         m.setMatchedColor("R");
                     }
                 }
 
             }
-            int total=recipesList.size();
-            int rate = (int)(total == 0 ? 0 : (count * 100.0) / total) ;
-            r.setMatchRate(rate);
+
         }
 
+        int totalCount = recipesList.size() == 0 ? 0 : recipesList.get(0).getTotalCount();
+        int totalPages = (int)Math.ceil(totalCount / pageSize);
+        RecipePageResponseDTO RecipeDTO = RecipePageResponseDTO.builder()
+                .recipes(recipesList)
+                .page(page)
+                .pageSize(pageSize)
+                .totalCount(totalCount)
+                .totalPages(totalPages)
+                .build();
 
-        return recipesList;
-
-
+        return RecipeDTO;
     }
 
-    // 검색 기능을 위한 메서드 추가
-    public List<RecipeListResponse> searchRecipesByKeyword(int page, Long userId, String keyword) {
-        int pageSize = 10;
-        int offset = (page - 1) * pageSize;
-
-        return recipeMapper.searchRecipesByKeyword(pageSize, offset, userId, keyword);
-    }
-    public List<RecipeCountRow> findMateRate(Long userId, List<Integer> rcpIds) {
-        List<RecipeCount> countAll =  recipeMapper.getMatchRate(userId,rcpIds);
-        List<RecipeCountRow> recipeRowsList = new ArrayList<>();
-        //내 재료 겹치는 개수, 재료 레시피 개수 구하기
-        for(RecipeCount cnt : countAll) {
-            int recipeCount = cnt.getRecipeCount();
-            int myCount = cnt.getMyCount();
-
-            int recipeMatchRate = (int) ((double) myCount / recipeCount * 100);
-
-            RecipeCountRow recipeRow = RecipeCountRow.builder()
-                    .rate(recipeMatchRate)
-                    .build();
-            recipeRowsList.add(recipeRow);
-        }
-        return  recipeRowsList;
-    }
 
     /**
      * 레시피 검색
@@ -136,6 +114,7 @@ public class RecipeService {
                         .ingId(ingDto.getIngId())
                         .rcpIngAmt(ingDto.getRcpIngAmt())
                         .rcpIngOrd(ingDto.getRcpIngOrd())
+                        .hasIng(ingDto.isHasIng())
                         .build();
                 recipeMapper.insertRecipeIngredient(recipeIngredient);
             }
@@ -189,6 +168,7 @@ public class RecipeService {
                         .ingId(ingDto.getIngId())
                         .rcpIngAmt(ingDto.getRcpIngAmt())
                         .rcpIngOrd(ingDto.getRcpIngOrd())
+                        .hasIng(ingDto.isHasIng())
                         .build();
                 recipeMapper.insertRecipeIngredient(recipeIngredient);
             }
