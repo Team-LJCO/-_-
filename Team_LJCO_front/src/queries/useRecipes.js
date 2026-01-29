@@ -10,11 +10,11 @@ import {
 import { queryKeys } from './queryKeys';
 
 // 레시피 목록 조회
-export const useRecipesQuery = (options = {}) => {
+export const useRecipesQuery = ({ page, size, search } = {}) => {
   return useQuery({
-    queryKey: queryKeys.recipes.list(),
-    queryFn: getAllRecipes,
-    ...options,
+    queryKey: queryKeys.recipes.list({ page, size, search }),
+    queryFn: () => getAllRecipes({ page, size, search }),
+    keepPreviousData: true,
   });
 };
 
